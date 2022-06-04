@@ -102,7 +102,7 @@ while (handShakeCount < N):
 
 # Sending loop
 if handShakeCount == N:
-  for msgNumber in range(0, 100):
+  for msgNumber in range(0, N_MSGS):
     time.sleep(random.randrange(10,100)/1000)
     msgText = 'Message ' + str(msgNumber) + ' from process ' + str(myself)
     msg = str.encode(msgText)
