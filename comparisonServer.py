@@ -27,5 +27,5 @@ for j in range(0,N_MSGS-1):
 			unordered = unordered + 1
 			break
 	
-print ('Found ' + str(unordered) + ' unordered messages')
+print ('Found ' + str(unordered) + ' unordered message rounds')
 serverSock.close()
