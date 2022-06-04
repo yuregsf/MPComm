@@ -75,7 +75,9 @@ print('I am process ', str(myself))
 recvSocket = socket(AF_INET, SOCK_DGRAM)
 recvSocket.bind((myAddresses[2][0], PORT))
 
-# Wait 5 seconds for other processes to start
+# Wait for other processes to start
+# To Do: fix bug that causes a failure when not all processes are started within this time
+# (fully started processes start sending data messages, which the others try to interpret as control messages) 
 time.sleep(5)
 
 # Create receiving message handler
