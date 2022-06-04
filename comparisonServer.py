@@ -3,7 +3,7 @@ import pickle
 from constMP import *
 
 serverSock = socket(AF_INET, SOCK_STREAM)
-serverSock.bind(SERVER_ADDR, SERVER_PORT)
+serverSock.bind((SERVER_ADDR, SERVER_PORT))
 serverSock.listen(5)
 
 numMsgs = 0
