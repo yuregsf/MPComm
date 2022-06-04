@@ -78,7 +78,7 @@ recvSocket.bind((myAddresses[2][0], PORT))
 # Wait for other processes to start
 # To Do: fix bug that causes a failure when not all processes are started within this time
 # (fully started processes start sending data messages, which the others try to interpret as control messages) 
-time.sleep(5)
+time.sleep(10)
 
 # Create receiving message handler
 msgHandler = MsgHandler(recvSocket)
