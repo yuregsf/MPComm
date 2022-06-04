@@ -21,7 +21,7 @@ class MsgHandler(threading.Thread):
     self.sock = sock
 
   def run(self):
-    print('Handler is ready. Waiting handshake...')
+    print('Handler is ready. Waiting for the handshakes...')
     
     global handShakes
     global handShakeCount
@@ -58,6 +58,15 @@ class MsgHandler(threading.Thread):
     logFile = open('logfile'+str(myself)+'.log', 'w')
     logFile.writelines(str(logList))
     logFile.close()
+    
+    # Send the list of messages to the server (using a TCP socket) for comparison
+    print('Sending the list of messages to the server for comparison...')
+    clientSock = socket(AF_INET, SOCK_STREAM)
+    clientSock.connect(SERVER_ADDR, SERVER_PORT)
+    msgPack = pickle.dumps(logList)
+    clientSock.send(msgPack)
+    clientSock.close()
+    
     return
 
 print('I am up, and my adddress is ', myAddresses[2])
@@ -97,22 +106,19 @@ for addrToSend in HOSTS:
 print('Main Thread: Sent all handshakes. handShakeCount=', str(handShakeCount))
 
 while (handShakeCount < N):
-  pass  # find a better way to wait
+  pass  # find a better way to wait for the handshakes
 
-# Sending loop
-if handShakeCount == N:
-  for msgNumber in range(0, N_MSGS):
-    # Wait some random time between successive messages
-    time.sleep(random.randrange(10,100)/1000)
-    #msgText = 'Message ' + str(msgNumber) + ' from process ' + str(myself)
-    msg = (myself, msgNumber)
-    msgPack = pickle.dumps(msg)
-    for addrToSend in HOSTS:
-      sendSocket.sendto(msgPack, (addrToSend,PORT))
-
-  # Tell all processes that I have no more messages to send
+# Send a sequence of data messages to all other processes 
+for msgNumber in range(0, N_MSGS):
+  # Wait some random time between successive messages
+  time.sleep(random.randrange(10,100)/1000)
+  msg = (myself, msgNumber)
+  msgPack = pickle.dumps(msg)
   for addrToSend in HOSTS:
-    msg = (-1,-1)
-    msgPack = pickle.dumps(msg)
     sendSocket.sendto(msgPack, (addrToSend,PORT))
 
+# Tell all processes that I have no more messages to send
+for addrToSend in HOSTS:
+  msg = (-1,-1)
+  msgPack = pickle.dumps(msg)
+  sendSocket.sendto(msgPack, (addrToSend,PORT))
