@@ -51,7 +51,7 @@ class MsgHandler(threading.Thread):
         if stopCount == N:
           break  # stop loop when all other processes have finished
       else:
-        print('Message ' + msg[1] + ' from process ' + msg[0])
+        print('Message ' + str(msg[1]) + ' from process ' + str(msg[0]))
         logList.append(msg)
         
     # Write log file
