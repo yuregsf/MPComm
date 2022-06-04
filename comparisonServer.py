@@ -28,3 +28,4 @@ for j in range(0,N_MSGS-1):
 			break
 	
 print ('Found ' + str(unordered) + ' unordered messages')
+serverSock.close()
