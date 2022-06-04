@@ -3,11 +3,10 @@ from constMP import * #-
 import threading
 import random
 import time
+import pickle
 
 myAddresses = gethostbyname_ex(gethostname())
-#iolock = threading.Lock()
-logList = []
-handShakes = []
+handShakes = [] # not used; only if we need to check whose handshake is missing
 handShakeCount = 0
 sendSocket = socket(AF_INET, SOCK_DGRAM)
 
@@ -27,37 +26,37 @@ class MsgHandler(threading.Thread):
     global handShakes
     global handShakeCount
     
+    logList = []
+    
+    # Wait until handshakes are received from all other processes
     while handShakeCount < N:
-      rcv_data = self.sock.recv(1024)
-      data = rcv_data.decode('utf-8')
-      data = eval(data)
-      if data[0] == 'READY':
+      msgPack = self.sock.recv(1024)
+      msg = pickle.loads(msgPack)
+      if msg[0] == 'READY':
 
         # To do: send reply of handshake and wait for confirmation
 
         handShakeCount = handShakeCount + 1
-        handShakes[data[1]] = 1
-        print('--- Handshake received: ', data[1])
+        handShakes[msg[1]] = 1
+        print('--- Handshake received: ', msg[1])
 
-    print('Sec. Thread: Received all handshakes. Entering the loop to receive messages.')
+    print('Secondary Thread: Received all handshakes. Entering the loop to receive messages.')
 
-    stopCount=0
+    stopCount=0 
     while True:                
-      data = self.sock.recv(1024)   # receive data from client
-      msg = bytes.decode(data)
-      if msg == 'STOP':       # stop loop if all other processes finished
+      msgPack = self.sock.recv(1024)   # receive data from client
+      msg = pickle.loads(msgPack)
+      if msg[0] == -1:   # count the 'stop' messages from the other processes
         stopCount = stopCount + 1
         if stopCount == N:
-          break
+          break  # stop loop when all other processes have finished
       else:
-        #iolock.acquire()
-        print(msg+'\n')
-        logList.append(str(bytes.decode(data)+'\n'))
-        #iolock.release()
-    
+        print('Message ' + msg[1] + ' from process ' + msg[0])
+        logList.append(msg)
+        
     # Write log file
     logFile = open('logfile'+str(myself)+'.log', 'w')
-    logFile.writelines(logList)
+    logFile.writelines(str(logList))
     logFile.close()
     return
 
@@ -88,12 +87,12 @@ print('Handler created')
 # Send handshakes
 # To do: Must continue sending until it gets a reply from each process
 #        Send confirmation of reply
-
 for addrToSend in HOSTS:
     print('Sending handshake to ', addrToSend)
-    msg = str(('READY', myself))
-    sendSocket.sendto(msg.encode(), (addrToSend,PORT))
-    #data = recvSocket.recvfrom(128)
+    msg = ('READY', myself)
+    msgPack = pickle.dumps(msg)
+    sendSocket.sendto(msgPack, (addrToSend,PORT))
+    #data = recvSocket.recvfrom(128) # Confirmations have not yet been implemented
 
 print('Main Thread: Sent all handshakes. handShakeCount=', str(handShakeCount))
 
@@ -103,12 +102,17 @@ while (handShakeCount < N):
 # Sending loop
 if handShakeCount == N:
   for msgNumber in range(0, N_MSGS):
+    # Wait some random time between successive messages
     time.sleep(random.randrange(10,100)/1000)
-    msgText = 'Message ' + str(msgNumber) + ' from process ' + str(myself)
-    msg = str.encode(msgText)
+    #msgText = 'Message ' + str(msgNumber) + ' from process ' + str(myself)
+    msg = (myself, msgNumber)
+    msgPack = pickle.dumps(msg)
     for addrToSend in HOSTS:
-      sendSocket.sendto(msg, (addrToSend,PORT))
+      sendSocket.sendto(msgPack, (addrToSend,PORT))
 
+  # Tell all processes that I have no more messages to send
   for addrToSend in HOSTS:
-    sendSocket.sendto(b'STOP', (addrToSend,PORT))
+    msg = (-1,-1)
+    msgPack = pickle.dumps(msg)
+    sendSocket.sendto(msgPack, (addrToSend,PORT))
 
