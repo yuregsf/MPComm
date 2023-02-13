@@ -73,7 +73,7 @@ print('I am up, and my adddress is ', myAddresses[2])
 
 #Find out who am I
 myself = 0
-for addr in HOSTS:
+for addr in PEERS:
   if addr in myAddresses[2]:
     break
   myself = myself + 1
@@ -96,7 +96,7 @@ print('Handler created')
 # Send handshakes
 # To do: Must continue sending until it gets a reply from each process
 #        Send confirmation of reply
-for addrToSend in HOSTS:
+for addrToSend in PEERS:
     print('Sending handshake to ', addrToSend)
     msg = ('READY', myself)
     msgPack = pickle.dumps(msg)
@@ -114,11 +114,11 @@ for msgNumber in range(0, N_MSGS):
   time.sleep(random.randrange(10,100)/1000)
   msg = (myself, msgNumber)
   msgPack = pickle.dumps(msg)
-  for addrToSend in HOSTS:
+  for addrToSend in PEERS:
     sendSocket.sendto(msgPack, (addrToSend,PORT))
 
 # Tell all processes that I have no more messages to send
-for addrToSend in HOSTS:
+for addrToSend in PEERS:
   msg = (-1,-1)
   msgPack = pickle.dumps(msg)
   sendSocket.sendto(msgPack, (addrToSend,PORT))
