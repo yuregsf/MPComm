@@ -116,6 +116,7 @@ for msgNumber in range(0, N_MSGS):
   msgPack = pickle.dumps(msg)
   for addrToSend in PEERS:
     sendSocket.sendto(msgPack, (addrToSend,PORT))
+    print('Sent message ' + str(msgNumber))
 
 # Tell all processes that I have no more messages to send
 for addrToSend in PEERS:
