@@ -32,6 +32,7 @@ class MsgHandler(threading.Thread):
     while handShakeCount < N:
       msgPack = self.sock.recv(1024)
       msg = pickle.loads(msgPack)
+      print ('########## unpickled msgPack: ', msg)
       if msg[0] == 'READY':
 
         # To do: send reply of handshake and wait for confirmation
@@ -71,8 +72,6 @@ class MsgHandler(threading.Thread):
 
 print('I am up, and my adddress is ', myAddresses[2])
 
-print('myAddresses list: ', str(myAddresses))
-
 #Find out who am I
 myself = 0
 for addr in PEERS:
@@ -83,7 +82,7 @@ print('I am process ', str(myself))
 
 #Create receive socket
 recvSocket = socket(AF_INET, SOCK_DGRAM)
-recvSocket.bind((myAddresses[2], PORT))
+recvSocket.bind((myAddresses[2][0], PORT))
 
 # Wait for other processes to start
 # To Do: fix bug that causes a failure when not all processes are started within this time
