@@ -4,7 +4,7 @@ from constMP import *
 
 serverSock = socket(AF_INET, SOCK_STREAM)
 serverSock.bind((SERVER_ADDR, SERVER_PORT))
-serverSock.listen(5)
+serverSock.listen(6)
 
 numMsgs = 0
 msgs = [] # each msg is a list of tuples (with the original messages received by the peer processes)
