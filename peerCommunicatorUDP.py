@@ -4,21 +4,17 @@ import threading
 import random
 import time
 import pickle
-import requests
 
-#myAddresses = gethostbyname_ex(gethostname())
-print ('#### gethostname: ', gethostname())
-# Get the public IP of the instance -- only in AWS EC2 (replace with the above if on Google Cloud)
-myAddr = requests.get('http://checkip.amazonaws.com')
-print ('#### Response from http://checkip.amazonaws.com \n', str(myAddr))
-handShakes = [] # not used; only if we need to check whose handshake is missing
+#myAddresses = gethostbyname_ex(gethostname()) # Does not work in EC2 for public address
+
+#handShakes = [] # not used; only if we need to check whose handshake is missing
 handShakeCount = 0
 sendSocket = socket(AF_INET, SOCK_DGRAM)
 
-i = 0
-while i < N:
-  handShakes.append(0)
-  i = i + 1 
+# i = 0
+# while i < N:
+#   handShakes.append(0)
+#   i = i + 1 
 
 class MsgHandler(threading.Thread):
   def __init__(self, sock):
@@ -28,7 +24,7 @@ class MsgHandler(threading.Thread):
   def run(self):
     print('Handler is ready. Waiting for the handshakes...')
     
-    global handShakes
+    #global handShakes
     global handShakeCount
     
     logList = []
@@ -43,7 +39,7 @@ class MsgHandler(threading.Thread):
         # To do: send reply of handshake and wait for confirmation
 
         handShakeCount = handShakeCount + 1
-        handShakes[msg[1]] = 1
+        #handShakes[msg[1]] = 1
         print('--- Handshake received: ', msg[1])
 
     print('Secondary Thread: Received all handshakes. Entering the loop to receive messages.')
@@ -76,16 +72,18 @@ class MsgHandler(threading.Thread):
     return
 
 #print('I am up, and my adddress is ', myAddresses[2])
-print ('I am up, and my addess is: ', myAddr)
 
-#Find out who am I
-myself = 0
-for addr in PEERS:
-  #if addr in myAddresses[2]:
-  if addr in (myAddr):
-    break
-  myself = myself + 1
-print('I am process ', str(myself))
+#Find out who I am (but instead of finding it out via the IP address, use an nonce)
+# myself = 0
+# for addr in PEERS:
+#   if addr in myAddresses[2]:
+#     break
+#   myself = myself + 1
+# print('I am process ', str(myself))
+random.seed(time.clock_gettime_ns())
+myself = random.randint(0,1000)
+
+print('I am up, and my ID is: ', str(myself))
 
 #Create receive socket
 recvSocket = socket(AF_INET, SOCK_DGRAM)
