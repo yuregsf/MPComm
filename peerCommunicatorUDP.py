@@ -80,7 +80,7 @@ class MsgHandler(threading.Thread):
 #     break
 #   myself = myself + 1
 # print('I am process ', str(myself))
-random.seed(time.clock_gettime_ns())
+random.seed(time.clock_gettime_ns(time.CLOCK_MONOTONIC))
 myself = random.randint(0,1000)
 
 print('I am up, and my ID is: ', str(myself))
