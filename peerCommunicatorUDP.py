@@ -10,7 +10,7 @@ import requests
 print ('#### gethostname: ', gethostname())
 # Get the public IP of the instance -- only in AWS EC2 (replace with the above if on Google Cloud)
 myAddr = requests.get('http://checkip.amazonaws.com')
-print ('#### Response from http://checkip.amazonaws.com \n', str(myaddr))
+print ('#### Response from http://checkip.amazonaws.com \n', str(myAddr))
 handShakes = [] # not used; only if we need to check whose handshake is missing
 handShakeCount = 0
 sendSocket = socket(AF_INET, SOCK_DGRAM)
