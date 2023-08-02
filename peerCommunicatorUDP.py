@@ -29,7 +29,7 @@ class MsgHandler(threading.Thread):
     logList = []
     
     # Wait until handshakes are received from all other processes
-    while handShakeCount < N-1:
+    while handShakeCount < N:
       msgPack = self.sock.recv(1024)
       msg = pickle.loads(msgPack)
       if msg[0] == 'READY':
@@ -71,6 +71,8 @@ class MsgHandler(threading.Thread):
 
 print('I am up, and my adddress is ', myAddresses[2])
 
+print('myAddresses list: ', str(myAddresses))
+
 #Find out who am I
 myself = 0
 for addr in PEERS:
@@ -105,7 +107,7 @@ for addrToSend in PEERS:
 
 print('Main Thread: Sent all handshakes. handShakeCount=', str(handShakeCount))
 
-while (handShakeCount < N-1):
+while (handShakeCount < N):
   pass  # find a better way to wait for the handshakes
 
 # Send a sequence of data messages to all other processes 
