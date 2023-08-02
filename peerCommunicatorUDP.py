@@ -71,6 +71,7 @@ class MsgHandler(threading.Thread):
     return
 
 print('I am up, and my adddress is ', myAddresses[2])
+print('#### myAddreses: ', str(myAddresses))
 
 #Find out who am I
 myself = 0
