@@ -12,7 +12,7 @@ msgs = [] # each msg is a list of tuples (with the original messages received by
 # Receive the lists of messages from the peer processes
 while numMsgs < N:
 	(conn, addr) = serverSock.accept()
-	msgPack = conn.recv(2048)
+	msgPack = conn.recv(32768)
 	conn.close()
 	msgs.append(pickle.loads(msgPack))
 	numMsgs = numMsgs + 1
