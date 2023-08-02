@@ -4,8 +4,11 @@ import threading
 import random
 import time
 import pickle
+import requests
 
-myAddresses = gethostbyname_ex(gethostname())
+#myAddresses = gethostbyname_ex(gethostname())
+# Get the public IP of the instance -- only in AWS EC2 (replace with the above if on Google Cloud)
+myAddr = requests.get('http://checkip.amazonaws.com')
 handShakes = [] # not used; only if we need to check whose handshake is missing
 handShakeCount = 0
 sendSocket = socket(AF_INET, SOCK_DGRAM)
@@ -70,13 +73,14 @@ class MsgHandler(threading.Thread):
     
     return
 
-print('I am up, and my adddress is ', myAddresses[2])
-print('#### myAddreses: ', str(myAddresses))
+#print('I am up, and my adddress is ', myAddresses[2])
+print ('I am up, and my addess is: ', myAddr)
 
 #Find out who am I
 myself = 0
 for addr in PEERS:
-  if addr in myAddresses[2]:
+  #if addr in myAddresses[2]:
+  if addr in (myAddr)
     break
   myself = myself + 1
 print('I am process ', str(myself))
