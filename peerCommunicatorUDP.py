@@ -82,7 +82,8 @@ print('I am process ', str(myself))
 
 #Create receive socket
 recvSocket = socket(AF_INET, SOCK_DGRAM)
-recvSocket.bind((myAddresses[2][0], PORT))
+#recvSocket.bind((myAddresses[2][0], PORT))
+recvSocket.bind(('0.0.0.0', PORT))
 
 # Wait for other processes to start
 # To Do: fix bug that causes a failure when not all processes are started within this time
