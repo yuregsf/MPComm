@@ -80,7 +80,7 @@ print ('I am up, and my addess is: ', myAddr)
 myself = 0
 for addr in PEERS:
   #if addr in myAddresses[2]:
-  if addr in (myAddr)
+  if addr in (myAddr):
     break
   myself = myself + 1
 print('I am process ', str(myself))
