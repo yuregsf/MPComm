@@ -33,7 +33,7 @@ class MsgHandler(threading.Thread):
     while handShakeCount < N:
       msgPack = self.sock.recv(1024)
       msg = pickle.loads(msgPack)
-      print ('########## unpickled msgPack: ', msg)
+      #print ('########## unpickled msgPack: ', msg)
       if msg[0] == 'READY':
 
         # To do: send reply of handshake and wait for confirmation
