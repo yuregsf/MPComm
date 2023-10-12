@@ -3,11 +3,11 @@ import pickle
 from constMP import *
 import time
 
-while (1):
-	serverSock = socket(AF_INET, SOCK_STREAM)
-	serverSock.bind(('0.0.0.0', SERVER_PORT))
-	serverSock.listen(6)
+serverSock = socket(AF_INET, SOCK_STREAM)
+serverSock.bind(('0.0.0.0', SERVER_PORT))
+serverSock.listen(6)
 
+while (1):
 	numMsgs = 0
 	msgs = [] # each msg is a list of tuples (with the original messages received by the peer processes)
 
@@ -30,6 +30,5 @@ while (1):
 				break
 	
 	print ('Found ' + str(unordered) + ' unordered message rounds')
-	serverSock.shutdown(SHUT_RDWR)
-	serverSock.close()
-	time.sleep(10)
+
+serverSock.close()
