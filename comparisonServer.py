@@ -2,11 +2,11 @@ from socket import *
 import pickle
 from constMP import *
 
-serverSock = socket(AF_INET, SOCK_STREAM)
-serverSock.bind(('0.0.0.0', SERVER_PORT))
-serverSock.listen(6)
-
 while (1):
+	serverSock = socket(AF_INET, SOCK_STREAM)
+	serverSock.bind(('0.0.0.0', SERVER_PORT))
+	serverSock.listen(6)
+
 	numMsgs = 0
 	msgs = [] # each msg is a list of tuples (with the original messages received by the peer processes)
 
