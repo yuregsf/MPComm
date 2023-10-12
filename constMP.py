@@ -6,8 +6,8 @@
 # With public addresses (in the same region of the cloud)
 #PEERS = ['44.219.197.47','44.220.0.53','44.198.151.245','34.226.166.158','3.219.23.96','54.160.96.180']
 
-# With public addresses (in two separate regions)
-PEERS = ['44.219.197.47','44.220.0.53','44.198.151.245','34.226.166.158','3.219.23.96','34.219.91.57']
+# With public addresses (in two separate regions - last two servers in Orgon)
+PEERS = ['44.219.197.47','44.198.151.245','34.226.166.158','3.219.23.96','34.222.214.8','34.219.91.57']
 
 
 
