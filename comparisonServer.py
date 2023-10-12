@@ -29,4 +29,5 @@ while (1):
 				break
 	
 	print ('Found ' + str(unordered) + ' unordered message rounds')
+	serverSock.shutdown()
 	serverSock.close()
