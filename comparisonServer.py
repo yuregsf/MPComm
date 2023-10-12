@@ -1,6 +1,7 @@
 from socket import *
 import pickle
 from constMP import *
+import time
 
 while (1):
 	serverSock = socket(AF_INET, SOCK_STREAM)
@@ -31,3 +32,4 @@ while (1):
 	print ('Found ' + str(unordered) + ' unordered message rounds')
 	serverSock.shutdown(SHUT_RDWR)
 	serverSock.close()
+	time.sleep(5)
