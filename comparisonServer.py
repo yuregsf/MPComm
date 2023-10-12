@@ -32,4 +32,4 @@ while (1):
 	print ('Found ' + str(unordered) + ' unordered message rounds')
 	serverSock.shutdown(SHUT_RDWR)
 	serverSock.close()
-	time.sleep(5)
+	time.sleep(10)
