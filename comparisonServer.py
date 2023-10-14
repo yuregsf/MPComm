@@ -32,7 +32,7 @@ for peer in PEERS:
 	msg = (peerNumber,mode)
 	msgPack = pickle.dumps(msg)
 	clientSock.send(msgPack)
-	clientSock.recv(msgPack)
+	msgPack = clientSock.recv(512)
 	print(pickle.loads(msgPack))
 	clientSock.close()
 	peerNumber = peerNumber + 1
