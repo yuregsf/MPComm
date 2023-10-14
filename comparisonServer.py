@@ -28,7 +28,7 @@ else:
 peerNumber = 0
 for peer in PEERS:
 	clientSock = socket(AF_INET, SOCK_STREAM)
-	clientSock.connect((PEERS[peerNumber], SERVER_PORT))
+	clientSock.connect((PEERS[peerNumber], PEER_TCP_PORT))
 	msg = (peerNumber,mode)
 	msgPack = pickle.dumps(msg)
 	clientSock.send(msgPack)

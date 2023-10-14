@@ -75,7 +75,7 @@ class MsgHandler(threading.Thread):
 
 def waitToStart():
   serverSock = socket(AF_INET, SOCK_STREAM)
-  serverSock.bind(('0.0.0.0', SERVER_PORT))
+  serverSock.bind(('0.0.0.0', PEER_TCP_PORT))
   serverSock.listen(1)
 
   (conn, addr) = serverSock.accept()
@@ -99,7 +99,7 @@ else:
 
 #Create receive socket
 recvSocket = socket(AF_INET, SOCK_DGRAM)
-recvSocket.bind(('0.0.0.0', PEER_PORT))
+recvSocket.bind(('0.0.0.0', PEER_UDP_PORT))
 
 # Wait for other processes to start
 # To Do: fix bug that causes a failure when not all processes are started within this time
@@ -118,7 +118,7 @@ for addrToSend in PEERS:
     print('Sending handshake to ', addrToSend)
     msg = ('READY', myself)
     msgPack = pickle.dumps(msg)
-    sendSocket.sendto(msgPack, (addrToSend,PEER_PORT))
+    sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
     #data = recvSocket.recvfrom(128) # Confirmations have not yet been implemented
 
 print('Main Thread: Sent all handshakes. handShakeCount=', str(handShakeCount))
@@ -133,11 +133,11 @@ for msgNumber in range(0, N_MSGS):
   msg = (myself, msgNumber)
   msgPack = pickle.dumps(msg)
   for addrToSend in PEERS:
-    sendSocket.sendto(msgPack, (addrToSend,PEER_PORT))
+    sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
     print('Sent message ' + str(msgNumber))
 
 # Tell all processes that I have no more messages to send
 for addrToSend in PEERS:
   msg = (-1,-1)
   msgPack = pickle.dumps(msg)
-  sendSocket.sendto(msgPack, (addrToSend,PEER_PORT))
+  sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
