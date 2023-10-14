@@ -4,11 +4,11 @@
 #PEERS = ['172.31.78.41','172.31.65.227','172.31.74.212','172.31.75.17','172.31.72.48','172.31.75.162']
 
 # With public addresses (in the same region of the cloud)
-PEERS_SAME_REGION = ['3.219.23.96','44.219.197.47','44.198.151.245','34.226.166.158','44.220.0.53','54.160.96.180']
+# The last one is not fixed and must be changed each time the lab is restarted.
+PEERS_SAME_REGION = ['3.219.23.96','34.226.166.158','44.198.151.245','44.219.197.47','44.220.0.53','100.26.165.131']
 
 # With public addresses (in two separate regions - last two servers in Oregon)
-PEERS_TWO_REGIONS = ['3.219.23.96','44.219.197.47','44.198.151.245','34.226.166.158','34.222.214.8','34.219.91.57']
-
+PEERS_TWO_REGIONS = ['3.219.23.96','34.226.166.158','44.198.151.245','44.219.197.47','44.239.194.163','52.88.79.71']
 
 
 PEER_PORT = 4567
