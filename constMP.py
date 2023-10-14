@@ -5,7 +5,7 @@
 
 # With public addresses (in the same region of the cloud)
 # The last one is not fixed and must be changed each time the lab is restarted.
-PEERS_SAME_REGION = ['3.219.23.96','34.226.166.158','44.198.151.245','44.219.197.47','44.220.0.53','100.26.165.131']
+PEERS_SAME_REGION = ['3.219.23.96','34.226.166.158','44.198.151.245','44.219.197.47','44.220.0.53','3.85.148.59']
 
 # With public addresses (in two separate regions - last two servers in Oregon)
 PEERS_TWO_REGIONS = ['3.219.23.96','34.226.166.158','44.198.151.245','44.219.197.47','44.239.194.163','52.88.79.71']
