@@ -4,6 +4,7 @@ import threading
 import random
 import time
 import pickle
+import sys
 
 #myAddresses = gethostbyname_ex(gethostname()) # Does not work in EC2 for public address
 
@@ -71,9 +72,23 @@ class MsgHandler(threading.Thread):
     
     return
 
+if len(sys.argv) < 2:
+  print('Usage: python3 peerCommunicatorUDP.py <l or r> (for local or remote setup)')
+  exit(0)
+
+if sys.argv[1] == 'l':
+  PEERS = PEERS_SAME_REGION
+else:
+  if sys.argv[1] == 'r':
+    PEERS = PEERS_TWO_REGIONS
+  else:
+    print('Usage: python3 peerCommunicatorUDP.py <l or r> (for local or remote setup)')
+    exit(0)
+
 #print('I am up, and my adddress is ', myAddresses[2])
 
-#Find out who I am (but instead of finding it out via the IP address, use an nonce)
+#Find out who I am (but instead of finding it out via the IP address, use an randon number)
+#(for some reason, AWS does not allow getting the public IP number via the sockets API)
 # myself = 0
 # for addr in PEERS:
 #   if addr in myAddresses[2]:
