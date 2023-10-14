@@ -72,43 +72,39 @@ class MsgHandler(threading.Thread):
     
     return
 
-if len(sys.argv) < 2:
-  print('Usage: python3 peerCommunicatorUDP.py <l or r> (for local or remote setup)')
-  exit(0)
 
-if sys.argv[1] == 'l':
+def waitToStart():
+  serverSock = socket(AF_INET, SOCK_STREAM)
+  serverSock.bind(('0.0.0.0', SERVER_PORT))
+  serverSock.listen(1)
+
+  (conn, addr) = serverSock.accept()
+  msgPack = conn.recv(1024)
+  msg = pickle.loads(msgPack)
+  myself = msg[0]
+  mode = msg[1]
+  conn.send(pickle.dumps('Peer process '+str(myself)+' started.'))
+  conn.close()
+  return (myself,mode)
+
+# From here, code is executed when program starts:
+print('Waiting for signal to start...')
+(myself, mode) = waitToStart()
+print('I am up, and my ID is: ', str(myself))
+
+if mode == 'l':
   PEERS = PEERS_SAME_REGION
 else:
-  if sys.argv[1] == 'r':
-    PEERS = PEERS_TWO_REGIONS
-  else:
-    print('Usage: python3 peerCommunicatorUDP.py <l or r> (for local or remote setup)')
-    exit(0)
-
-#print('I am up, and my adddress is ', myAddresses[2])
-
-#Find out who I am (but instead of finding it out via the IP address, use an randon number)
-#(for some reason, AWS does not allow getting the public IP number via the sockets API)
-# myself = 0
-# for addr in PEERS:
-#   if addr in myAddresses[2]:
-#     break
-#   myself = myself + 1
-# print('I am process ', str(myself))
-random.seed(time.clock_gettime_ns(time.CLOCK_MONOTONIC))
-myself = random.randint(0,1000)
-
-print('I am up, and my ID is: ', str(myself))
+  PEERS = PEERS_TWO_REGIONS
 
 #Create receive socket
 recvSocket = socket(AF_INET, SOCK_DGRAM)
-#recvSocket.bind((myAddresses[2][0], PORT))
-recvSocket.bind(('0.0.0.0', PORT))
+recvSocket.bind(('0.0.0.0', PEER_PORT))
 
 # Wait for other processes to start
 # To Do: fix bug that causes a failure when not all processes are started within this time
 # (fully started processes start sending data messages, which the others try to interpret as control messages) 
-time.sleep(10)
+time.sleep(5)
 
 # Create receiving message handler
 msgHandler = MsgHandler(recvSocket)
@@ -122,7 +118,7 @@ for addrToSend in PEERS:
     print('Sending handshake to ', addrToSend)
     msg = ('READY', myself)
     msgPack = pickle.dumps(msg)
-    sendSocket.sendto(msgPack, (addrToSend,PORT))
+    sendSocket.sendto(msgPack, (addrToSend,PEER_PORT))
     #data = recvSocket.recvfrom(128) # Confirmations have not yet been implemented
 
 print('Main Thread: Sent all handshakes. handShakeCount=', str(handShakeCount))
@@ -137,11 +133,11 @@ for msgNumber in range(0, N_MSGS):
   msg = (myself, msgNumber)
   msgPack = pickle.dumps(msg)
   for addrToSend in PEERS:
-    sendSocket.sendto(msgPack, (addrToSend,PORT))
+    sendSocket.sendto(msgPack, (addrToSend,PEER_PORT))
     print('Sent message ' + str(msgNumber))
 
 # Tell all processes that I have no more messages to send
 for addrToSend in PEERS:
   msg = (-1,-1)
   msgPack = pickle.dumps(msg)
-  sendSocket.sendto(msgPack, (addrToSend,PORT))
+  sendSocket.sendto(msgPack, (addrToSend,PEER_PORT))

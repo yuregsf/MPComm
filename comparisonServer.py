@@ -2,11 +2,44 @@ from socket import *
 import pickle
 from constMP import *
 import time
+import sys
 
 serverSock = socket(AF_INET, SOCK_STREAM)
 serverSock.bind(('0.0.0.0', SERVER_PORT))
 serverSock.listen(6)
 
+if len(sys.argv) != 2:
+	print ('Usage: python3 comparisonServer.py <mode> <<<<where mode is either l or r (local or remote)>>>>')
+	exit(0)
+
+mode = ''
+if sys.argv[1] == 'l':
+	mode = 'l'
+	PEERS = PEERS_SAME_REGION
+else:
+	if sys.argv[1] == 'r':
+		mode = 'r'
+		PEERS = PEERS_TWO_REGIONS
+	else:
+		print ('Usage: python3 comparisonServer.py <mode> <<<<where mode is either l or r (local or remote)>>>>')
+		exit(0)
+
+# Connect to each of the peers and send the 'initiate' signal:
+peerNumber = 0
+for peer in PEERS:
+	clientSock = socket(AF_INET, SOCK_STREAM)
+	clientSock.connect((PEERS[peerNumber], SERVER_PORT))
+	msg = (peerNumber,mode)
+	msgPack = pickle.dumps(msg)
+	clientSock.send(msgPack)
+	clientSock.recv(msgPack)
+	print(pickle.loads(msgPack))
+	clientSock.close()
+	peerNumber = peerNumber + 1
+
+print('Now, wait for the message logs from the communicating peers...')
+
+# Loop to wait for the message logs for comparison:
 while (1):
 	numMsgs = 0
 	msgs = [] # each msg is a list of tuples (with the original messages received by the peer processes)
