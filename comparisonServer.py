@@ -11,28 +11,28 @@ serverSock.listen(6)
 def mainLoop():
 	cont = 1
 	while cont:
-		(mode,nMsg) = promptUser()
+		(mode,nMsgs) = promptUser()
 		peerList = PEERS_SAME_REGION if mode == 'l' else PEERS_TWO_REGIONS
-		startPeers(peerList,mode)
+		startPeers(peerList,mode,nMsgs)
 		print('Now, wait for the message logs from the communicating peers...')
-		waitForLogsAndCompare(nMsg)
+		waitForLogsAndCompare(nMsgs)
 		cont = int(input('Continue? (1=Yes; 0=No) '))
 	serverSock.close()
 
 def promptUser():
 	mode =''
-	while (mode != 'l' and mode != 'r'):
-		mode = input('Enter mode (l=local region; r=remote region): ')
-	nMsgs = int(input('Enter the number of messages for each peer to send: '))
+	while (mode != 'l' and mode != 'r' and mode != '0'):
+		mode = input('Enter mode: l=local region -or- r=remote region => ')
+	nMsgs = int(input('Enter the number of messages for each peer to send (0 to terminate)=> '))
 	return (mode,nMsgs)
 
-def startPeers(PEERS,mode):
+def startPeers(PEERS,mode,nMsgs):
 	# Connect to each of the peers and send the 'initiate' signal:
 	peerNumber = 0
 	for peer in PEERS:
 		clientSock = socket(AF_INET, SOCK_STREAM)
 		clientSock.connect((PEERS[peerNumber], PEER_TCP_PORT))
-		msg = (peerNumber,mode)
+		msg = (peerNumber,mode,nMsgs)
 		msgPack = pickle.dumps(msg)
 		clientSock.send(msgPack)
 		msgPack = clientSock.recv(512)
