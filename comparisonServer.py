@@ -10,14 +10,14 @@ serverSock.listen(6)
 
 def mainLoop():
 	cont = 1
-	while cont:
+	while 1:
 		(mode,nMsgs) = promptUser()
 		peerList = PEERS_SAME_REGION if mode == 'l' else PEERS_TWO_REGIONS
 		startPeers(peerList,mode,nMsgs)
+		if nMsgs == 0:
+			break
 		print('Now, wait for the message logs from the communicating peers...')
 		waitForLogsAndCompare(nMsgs)
-		#cont = int(input('Continue? (1=Yes; 0=No) '))
-		cont = 1 if nMsgs > 0 else 0
 	serverSock.close()
 
 def promptUser():
