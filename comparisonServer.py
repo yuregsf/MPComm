@@ -16,7 +16,8 @@ def mainLoop():
 		startPeers(peerList,mode,nMsgs)
 		print('Now, wait for the message logs from the communicating peers...')
 		waitForLogsAndCompare(nMsgs)
-		cont = int(input('Continue? (1=Yes; 0=No) '))
+		#cont = int(input('Continue? (1=Yes; 0=No) '))
+		cont = 1 if nMsgs > 0 else 0
 	serverSock.close()
 
 def promptUser():
@@ -26,12 +27,12 @@ def promptUser():
 	nMsgs = int(input('Enter the number of messages for each peer to send (0 to terminate)=> '))
 	return (mode,nMsgs)
 
-def startPeers(PEERS,mode,nMsgs):
+def startPeers(peerList,mode,nMsgs):
 	# Connect to each of the peers and send the 'initiate' signal:
 	peerNumber = 0
-	for peer in PEERS:
+	for peer in peerList:
 		clientSock = socket(AF_INET, SOCK_STREAM)
-		clientSock.connect((PEERS[peerNumber], PEER_TCP_PORT))
+		clientSock.connect((peerList[peerNumber], PEER_TCP_PORT))
 		msg = (peerNumber,mode,nMsgs)
 		msgPack = pickle.dumps(msg)
 		clientSock.send(msgPack)
