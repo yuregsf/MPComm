@@ -86,7 +86,7 @@ class MsgHandler(threading.Thread):
     # Reset the handshake counter
     handShakeCount = 0
 
-    return
+    exit(0)
 
 # Function to wait for start signal from comparison server: 
 def waitToStart():
@@ -101,9 +101,6 @@ def waitToStart():
   return (myself,mode,nMsgs)
 
 # From here, code is executed when program starts:
-
-# Create receiving message handler
-msgHandler = MsgHandler(recvSocket)
 
 while 1:
   print('Waiting for signal to start...')
@@ -124,6 +121,8 @@ while 1:
   # (fully started processes start sending data messages, which the others try to interpret as control messages) 
   time.sleep(5)
 
+  # Create receiving message handler
+  msgHandler = MsgHandler(recvSocket)
   msgHandler.start()
   print('Handler started')
 
