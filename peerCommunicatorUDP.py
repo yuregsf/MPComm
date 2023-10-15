@@ -9,12 +9,20 @@ import pickle
 
 #handShakes = [] # not used; only if we need to check whose handshake is missing
 
+# Counter to make sure we have received handshakes from all other processes
 handShakeCount = 0
-sendSocket = socket(AF_INET, SOCK_DGRAM)
 
+# UDP sockets to send and receive data messages:
+# Create send socket
+sendSocket = socket(AF_INET, SOCK_DGRAM)
 #Create and bind receive socket
 recvSocket = socket(AF_INET, SOCK_DGRAM)
 recvSocket.bind(('0.0.0.0', PEER_UDP_PORT))
+
+# TCP socket to receive start signal from the comparison server:
+serverSock = socket(AF_INET, SOCK_STREAM)
+serverSock.bind(('0.0.0.0', PEER_TCP_PORT))
+serverSock.listen(1)
 
 # i = 0
 # while i < N:
@@ -77,15 +85,11 @@ class MsgHandler(threading.Thread):
     
     # Reset the handshake counter
     handShakeCount = 0
-    
+
     return
 
-
+# Function to wait for start signal from comparison server: 
 def waitToStart():
-  serverSock = socket(AF_INET, SOCK_STREAM)
-  serverSock.bind(('0.0.0.0', PEER_TCP_PORT))
-  serverSock.listen(1)
-
   (conn, addr) = serverSock.accept()
   msgPack = conn.recv(1024)
   msg = pickle.loads(msgPack)
