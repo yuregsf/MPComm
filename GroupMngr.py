@@ -1,13 +1,30 @@
 import constMP
 
 class GroupMngr:
-  int port
+  port = 0
+  membership = []
+  
   def __init__(self, port):
     self.port = port
     self.serverLoop()
 
   def serverLoop(self):
     serverSock = socket(AF_INET, SOCK_STREAM)
-    serverSock.bind(('0.0.0.0', SERVER_PORT))
+    serverSock.bind(('0.0.0.0', self.port))
     serverSock.listen(6)
-    
+    while(1):
+      (conn, addr) = serverSock.accept()
+      msgPack = conn.recv(2048)
+      conn.close()
+      req = pickle.loads(msgPack)
+      if req["op"] == "register":
+        self.membership.append((req["name"],req["ipaddr"],req["port"]))
+      elif req["op"] == "list":
+        list = []
+        for m in self.membership:
+          list.append(m["ipaddr"])
+        return list
+      else:
+        pass
+        
+        
