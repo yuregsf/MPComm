@@ -3,29 +3,29 @@ import pickle
 from constMP import *
 import time
 import sys
+from GroupMngr import *
 
 serverSock = socket(AF_INET, SOCK_STREAM)
 serverSock.bind(('0.0.0.0', SERVER_PORT))
 serverSock.listen(6)
 
+groupMngr = GroupMngr(5680)
+
 def mainLoop():
 	cont = 1
 	while 1:
-		(mode,nMsgs) = promptUser()
-		peerList = PEERS_SAME_REGION if mode == 'l' else PEERS_TWO_REGIONS
-		startPeers(peerList,mode,nMsgs)
+		nMsgs = promptUser()
 		if nMsgs == 0:
 			break
+		peerList = groupMngr.list()
+		startPeers(peerList,nMsgs)
 		print('Now, wait for the message logs from the communicating peers...')
 		waitForLogsAndCompare(nMsgs)
 	serverSock.close()
 
 def promptUser():
-	mode =''
-	while (mode != 'l' and mode != 'r' and mode != '0'):
-		mode = input('Enter mode: l=local region -or- r=remote region => ')
 	nMsgs = int(input('Enter the number of messages for each peer to send (0 to terminate)=> '))
-	return (mode,nMsgs)
+	return nMsgs
 
 def startPeers(peerList,mode,nMsgs):
 	# Connect to each of the peers and send the 'initiate' signal:
