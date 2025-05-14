@@ -1,4 +1,6 @@
-import constMP
+from socket import *
+import pickle
+from constMP import *
 
 class GroupMngr:
   port = 0
