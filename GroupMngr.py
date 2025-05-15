@@ -6,8 +6,8 @@ class GroupMngr:
   port = 0
   membership = []
   
-  def __init__(self, port):
-    self.port = port
+  def __init__(self):
+    self.port = GROUPMNGR_TCP_PORT
     self.serverLoop()
 
   def serverLoop(self):
@@ -20,11 +20,11 @@ class GroupMngr:
       conn.close()
       req = pickle.loads(msgPack)
       if req["op"] == "register":
-        self.membership.append((req["name"],req["ipaddr"],req["port"]))
+        self.membership.append((req["ipaddr"],req["port"]))
       elif req["op"] == "list":
         list = []
         for m in self.membership:
-          list.append(m["ipaddr"])
+          list.append(m[1])
         return list
       else:
         pass

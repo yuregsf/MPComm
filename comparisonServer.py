@@ -9,7 +9,7 @@ serverSock = socket(AF_INET, SOCK_STREAM)
 serverSock.bind(('0.0.0.0', SERVER_PORT))
 serverSock.listen(6)
 
-groupMngr = GroupMngr(5680)
+groupMngr = GroupMngr()
 
 def mainLoop():
 	cont = 1
@@ -17,7 +17,15 @@ def mainLoop():
 		nMsgs = promptUser()
 		if nMsgs == 0:
 			break
-		peerList = groupMngr.list()
+		clientSock = socket(AF_INET, SOCK_STREAM)
+		clientSock.connect(GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT)
+		req = {"op":"list"}
+		msg = pickle.dumps(req)
+		clientSock.send(msg)
+		msg = clientSock.recv(2048)
+		clientSock.close()
+		peerList = pickle.loads(msg)
+		print("List of Peers: ", peerList)
 		startPeers(peerList,nMsgs)
 		print('Now, wait for the message logs from the communicating peers...')
 		waitForLogsAndCompare(nMsgs)
@@ -27,13 +35,13 @@ def promptUser():
 	nMsgs = int(input('Enter the number of messages for each peer to send (0 to terminate)=> '))
 	return nMsgs
 
-def startPeers(peerList,mode,nMsgs):
+def startPeers(peerList,nMsgs):
 	# Connect to each of the peers and send the 'initiate' signal:
 	peerNumber = 0
 	for peer in peerList:
 		clientSock = socket(AF_INET, SOCK_STREAM)
-		clientSock.connect((peerList[peerNumber], PEER_TCP_PORT))
-		msg = (peerNumber,mode,nMsgs)
+		clientSock.connect((peer, PEER_TCP_PORT))
+		msg = (peerNumber,nMsgs)
 		msgPack = pickle.dumps(msg)
 		clientSock.send(msgPack)
 		msgPack = clientSock.recv(512)

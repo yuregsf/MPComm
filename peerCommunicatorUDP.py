@@ -4,6 +4,7 @@ import threading
 import random
 import time
 import pickle
+import requests
 
 #myAddresses = gethostbyname_ex(gethostname()) # Does not work in EC2 for public address
 
@@ -23,6 +24,23 @@ recvSocket.bind(('0.0.0.0', PEER_UDP_PORT))
 serverSock = socket(AF_INET, SOCK_STREAM)
 serverSock.bind(('0.0.0.0', PEER_TCP_PORT))
 serverSock.listen(1)
+
+
+def get_public_ip():
+  try:
+    with urllib.request.urlopen('https://api64.ipify.org') as response:
+      ip = response.read().decode('utf8')
+      return ip
+  except Exception as e:
+    print(f"Error: {e}")
+    return None
+
+clientSock = socket(AF_INET, SOCK_STREAM)
+clientSock.connect(GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT)
+req = {"op":"register", "ipaddr":get_public_ip(), "port":PEER_UDP_PORT}
+msg = pickle.dumps(req)
+clientSock.send(msg)
+clientSock.close()
 
 # i = 0
 # while i < N:
@@ -94,27 +112,20 @@ def waitToStart():
   msgPack = conn.recv(1024)
   msg = pickle.loads(msgPack)
   myself = msg[0]
-  mode = msg[1]
-  nMsgs = msg[2]
+  nMsgs = msg[1]
   conn.send(pickle.dumps('Peer process '+str(myself)+' started.'))
   conn.close()
-  return (myself,mode,nMsgs)
+  return (myself,nMsgs)
 
 # From here, code is executed when program starts:
-
 while 1:
   print('Waiting for signal to start...')
-  (myself, mode, nMsgs) = waitToStart()
+  (myself, nMsgs) = waitToStart()
   print('I am up, and my ID is: ', str(myself))
 
   if nMsgs == 0:
     print('Terminating.')
     exit(0)
-
-  if mode == 'l':
-    PEERS = PEERS_SAME_REGION
-  else:
-    PEERS = PEERS_TWO_REGIONS
 
   # Wait for other processes to be ready
   # To Do: fix bug that causes a failure when not all processes are started within this time
