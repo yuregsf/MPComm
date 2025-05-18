@@ -6,12 +6,12 @@ import time
 import pickle
 from requests import get
 
-#myAddresses = gethostbyname_ex(gethostname()) # Does not work in EC2 for public address
-
 #handShakes = [] # not used; only if we need to check whose handshake is missing
 
 # Counter to make sure we have received handshakes from all other processes
 handShakeCount = 0
+
+PEERS = []
 
 # UDP sockets to send and receive data messages:
 # Create send socket
@@ -38,6 +38,7 @@ def get_public_ip():
 ipAddr = get('https://api.ipify.org').content.decode('utf8')
 print('My public IP address is: {}'.format(ipAddr))
 
+# Register this peer with the group manager
 clientSock = socket(AF_INET, SOCK_STREAM)
 print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
 clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
@@ -46,11 +47,6 @@ msg = pickle.dumps(req)
 print ('Registering with group manager: ', req)
 clientSock.send(msg)
 clientSock.close()
-
-# i = 0
-# while i < N:
-#   handShakes.append(0)
-#   i = i + 1 
 
 class MsgHandler(threading.Thread):
   def __init__(self, sock):
@@ -142,6 +138,18 @@ while 1:
   msgHandler.start()
   print('Handler started')
 
+  clientSock = socket(AF_INET, SOCK_STREAM)
+  print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
+  clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
+  req = {"op":"list"}
+  msg = pickle.dumps(req)
+  print ('Getting list of peers from group manager: ', req)
+  clientSock.send(msg)
+  clientSock.recv(msg)
+  PEERS = pickle.loads(msg)
+  print ('Got list of peers: ', PEERS)
+  clientSock.close()
+  
   # Send handshakes
   # To do: Must continue sending until it gets a reply from each process
   #        Send confirmation of reply
