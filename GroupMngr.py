@@ -16,10 +16,12 @@ def serverLoop():
     req = pickle.loads(msgPack)
     if req["op"] == "register":
       membership.append((req["ipaddr"],req["port"]))
+      print ('Registered peer: ', req)
     elif req["op"] == "list":
       list = []
       for m in membership:
         list.append(m[1])
+      print ('List of peers sent to server: ', list)
       return list
     else:
       pass
