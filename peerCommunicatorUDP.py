@@ -145,7 +145,7 @@ while 1:
   msg = pickle.dumps(req)
   print ('Getting list of peers from group manager: ', req)
   clientSock.send(msg)
-  clientSock.recv(msg)
+  msg = clientSock.recv(2048)
   PEERS = pickle.loads(msg)
   print ('Got list of peers: ', PEERS)
   clientSock.close()
