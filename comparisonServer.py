@@ -3,7 +3,6 @@ import pickle
 from constMP import *
 import time
 import sys
-from GroupMngr import *
 
 serverSock = socket(AF_INET, SOCK_STREAM)
 serverSock.bind(('0.0.0.0', SERVER_PORT))
