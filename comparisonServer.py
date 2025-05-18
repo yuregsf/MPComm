@@ -55,6 +55,7 @@ def waitForLogsAndCompare(N_MSGS):
 	while numPeers < N:
 		(conn, addr) = serverSock.accept()
 		msgPack = conn.recv(32768)
+		print ('Received log from peer')
 		conn.close()
 		msgs.append(pickle.loads(msgPack))
 		numPeers = numPeers + 1
