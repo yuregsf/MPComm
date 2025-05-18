@@ -12,7 +12,6 @@ def serverLoop():
   while(1):
     (conn, addr) = serverSock.accept()
     msgPack = conn.recv(2048)
-    conn.close()
     req = pickle.loads(msgPack)
     if req["op"] == "register":
       membership.append((req["ipaddr"],req["port"]))
@@ -22,8 +21,10 @@ def serverLoop():
       for m in membership:
         list.append(m[0])
       print ('List of peers sent to server: ', list)
-      return list
+      conn.send(pickle.dumps(list))
     else:
-      pass
+      pass # fix (send back an answer in case of unknown op
+
+  conn.close()
 
 serverLoop()
