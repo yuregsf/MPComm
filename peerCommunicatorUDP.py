@@ -36,7 +36,7 @@ def get_public_ip():
     return None
 
 clientSock = socket(AF_INET, SOCK_STREAM)
-clientSock.connect(GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT)
+clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
 req = {"op":"register", "ipaddr":get_public_ip(), "port":PEER_UDP_PORT}
 msg = pickle.dumps(req)
 clientSock.send(msg)
