@@ -20,7 +20,7 @@ def serverLoop():
     elif req["op"] == "list":
       list = []
       for m in membership:
-        list.append(m[1])
+        list.append(m[0])
       print ('List of peers sent to server: ', list)
       return list
     else:
