@@ -36,7 +36,7 @@ def get_public_ip():
     return None
 
 ipAddr = get('https://api.ipify.org').content.decode('utf8')
-print('My public IP address is: {}'.format(ip))
+print('My public IP address is: {}'.format(ipAddr))
 
 clientSock = socket(AF_INET, SOCK_STREAM)
 print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
