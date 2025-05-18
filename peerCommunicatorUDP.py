@@ -4,7 +4,7 @@ import threading
 import random
 import time
 import pickle
-import requests
+from requests import get
 
 #myAddresses = gethostbyname_ex(gethostname()) # Does not work in EC2 for public address
 
@@ -35,10 +35,13 @@ def get_public_ip():
     print(f"Error: {e}")
     return None
 
+ipAddr = get('https://api.ipify.org').content.decode('utf8')
+print('My public IP address is: {}'.format(ip))
+
 clientSock = socket(AF_INET, SOCK_STREAM)
 print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
 clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
-req = {"op":"register", "ipaddr":get_public_ip(), "port":PEER_UDP_PORT}
+req = {"op":"register", "ipaddr":ipAddr, "port":PEER_UDP_PORT}
 msg = pickle.dumps(req)
 print ('Registering with group manager: ', req)
 clientSock.send(msg)
