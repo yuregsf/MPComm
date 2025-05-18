@@ -15,7 +15,7 @@ def mainLoop():
 		if nMsgs == 0:
 			break
 		clientSock = socket(AF_INET, SOCK_STREAM)
-		clientSock.connect(GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT)
+		clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
 		req = {"op":"list"}
 		msg = pickle.dumps(req)
 		clientSock.send(msg)
