@@ -4,7 +4,6 @@ from constMP import *
 
 port = GROUPMNGR_TCP_PORT
 membership = []
-serverLoop()
 
 def serverLoop():
   serverSock = socket(AF_INET, SOCK_STREAM)
@@ -24,5 +23,5 @@ def serverLoop():
       return list
     else:
       pass
-        
-        
+
+serverLoop()
