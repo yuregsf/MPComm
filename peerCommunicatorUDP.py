@@ -27,26 +27,35 @@ serverSock.listen(1)
 
 
 def get_public_ip():
-  try:
-    with urllib.request.urlopen('https://api64.ipify.org') as response:
-      ip = response.read().decode('utf8')
-      return ip
-  except Exception as e:
-    print(f"Error: {e}")
-    return None
+  ipAddr = get('https://api.ipify.org').content.decode('utf8')
+  print('My public IP address is: {}'.format(ipAddr))
+  return ipAddr
 
-ipAddr = get('https://api.ipify.org').content.decode('utf8')
-print('My public IP address is: {}'.format(ipAddr))
+# Function to register this peer with the group manager
+def registerWithGroupManager():
+  clientSock = socket(AF_INET, SOCK_STREAM)
+  print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
+  clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
+  ipAddr = get_public_ip()
+  req = {"op":"register", "ipaddr":ipAddr, "port":PEER_UDP_PORT}
+  msg = pickle.dumps(req)
+  print ('Registering with group manager: ', req)
+  clientSock.send(msg)
+  clientSock.close()
 
-# Register this peer with the group manager
-clientSock = socket(AF_INET, SOCK_STREAM)
-print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
-clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
-req = {"op":"register", "ipaddr":ipAddr, "port":PEER_UDP_PORT}
-msg = pickle.dumps(req)
-print ('Registering with group manager: ', req)
-clientSock.send(msg)
-clientSock.close()
+def getListOfPeers():
+  clientSock = socket(AF_INET, SOCK_STREAM)
+  print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
+  clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
+  req = {"op":"list"}
+  msg = pickle.dumps(req)
+  print ('Getting list of peers from group manager: ', req)
+  clientSock.send(msg)
+  msg = clientSock.recv(2048)
+  PEERS = pickle.loads(msg)
+  print ('Got list of peers: ', PEERS)
+  clientSock.close()
+  return PEERS
 
 class MsgHandler(threading.Thread):
   def __init__(self, sock):
@@ -107,7 +116,7 @@ class MsgHandler(threading.Thread):
 
     exit(0)
 
-# Function to wait for start signal from comparison server: 
+# Function to wait for start signal from comparison server:
 def waitToStart():
   (conn, addr) = serverSock.accept()
   msgPack = conn.recv(1024)
@@ -119,6 +128,7 @@ def waitToStart():
   return (myself,nMsgs)
 
 # From here, code is executed when program starts:
+registerWithGroupManager()
 while 1:
   print('Waiting for signal to start...')
   (myself, nMsgs) = waitToStart()
@@ -138,17 +148,7 @@ while 1:
   msgHandler.start()
   print('Handler started')
 
-  clientSock = socket(AF_INET, SOCK_STREAM)
-  print ('Connecting to group manager: ', (GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
-  clientSock.connect((GROUPMNGR_ADDR,GROUPMNGR_TCP_PORT))
-  req = {"op":"list"}
-  msg = pickle.dumps(req)
-  print ('Getting list of peers from group manager: ', req)
-  clientSock.send(msg)
-  msg = clientSock.recv(2048)
-  PEERS = pickle.loads(msg)
-  print ('Got list of peers: ', PEERS)
-  clientSock.close()
+  PEERS = getListOfPeers()
   
   # Send handshakes
   # To do: Must continue sending until it gets a reply from each process
