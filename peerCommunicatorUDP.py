@@ -7,6 +7,12 @@ import pickle
 from requests import get
 
 #handShakes = [] # not used; only if we need to check whose handshake is missing
+operations = {
+        0: "insert",
+        1: "delete",
+        2: "update",
+        3: "query"
+        }
 
 # Counter to make sure we have received handshakes from all other processes
 handShakeCount = 0
@@ -169,7 +175,7 @@ while 1:
   for msgNumber in range(0, nMsgs):
     # Wait some random time between successive messages
     time.sleep(random.randrange(10,100)/1000)
-    msg = (myself, msgNumber)
+    msg = (myself, operations[msgNumber])
     msgPack = pickle.dumps(msg)
     for addrToSend in PEERS:
       sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))

@@ -9,7 +9,6 @@ serverSock.bind(('0.0.0.0', SERVER_PORT))
 serverSock.listen(6)
 
 def mainLoop():
-	cont = 1
 	while 1:
 		nMsgs = promptUser()
 		if nMsgs == 0:
