@@ -92,6 +92,7 @@ class MsgHandler(threading.Thread):
 
     print('Secondary Thread: Received all handshakes. Entering the loop to receive messages.')
 
+    logDict = {}
     stopCount=0 
     while True:                
       msgPack = self.sock.recv(1024)   # receive data from client
@@ -102,8 +103,15 @@ class MsgHandler(threading.Thread):
           break  # stop loop when all other processes have finished
       else:
         print('Message ' + str(msg[1]) + ' from process ' + str(msg[0]))
+        if msg[0] not in logDict:
+            logDict[msg[0]] = []
+        logDict[msg[0]].append(msg[1])
         logList.append(msg)
-        
+
+    for proc_id, messages in logDict.items():
+        print(f"\nProcess {proc_id}:\n")
+        print(str(messages))
+
     # Write log file
     logFile = open('logfile'+str(myself)+'.log', 'w')
     logFile.writelines(str(logList))
@@ -175,7 +183,7 @@ while 1:
   for msgNumber in range(0, nMsgs):
     # Wait some random time between successive messages
     time.sleep(random.randrange(10,100)/1000)
-    msg = (myself, operations[msgNumber])
+    msg = (myself, operations[msgNumber%4])
     msgPack = pickle.dumps(msg)
     for addrToSend in PEERS:
       sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
