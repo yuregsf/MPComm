@@ -96,6 +96,7 @@ class MsgHandler(threading.Thread):
         
         delivered_count = 0
         i = 0
+        # Itera sobre a fila
         while i < len(queue):
             sender_id, received_vector, operation = queue[i]
             
@@ -154,13 +155,19 @@ class MsgHandler(threading.Thread):
                 print("All peers sent STOP messages and the delivery queue is empty. Terminating reception.")
                 break
                 
+            # 2. Se todas as paradas chegaram, mas a fila não esvazia, tentamos liberar mensagens
+            if stopCount == N and len(deliveryQueue) > 0:
+                 self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
+                 time.sleep(0.05) # Pequeno sleep para liberar CPU e reavaliar
+                 continue
+
             try:
                 # Usa um timeout curto (100ms) para evitar bloqueio e permitir reavaliação da fila.
                 self.sock.settimeout(0.1) 
                 msgPack = self.sock.recv(1024)   
                 self.sock.settimeout(None) # Retorna ao modo bloqueante após sucesso
             except timeout:
-                # 2. Em caso de timeout: Tenta processar a fila.
+                # 3. Em caso de timeout: Tenta processar a fila.
                 self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
                 continue # Volta para o topo do loop para re-avaliar a condição de parada
             except ConnectionResetError:
@@ -172,7 +179,7 @@ class MsgHandler(threading.Thread):
             
             if msg[0] == -1:    
                 stopCount = stopCount + 1
-                print(f"Received STOP. Current stopCount={stopCount}")
+                print(f"Received STOP from P{msg[1]}. Current stopCount={stopCount}")
                 # Força a checagem da fila imediatamente.
                 self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
             
@@ -180,10 +187,6 @@ class MsgHandler(threading.Thread):
                 # O formato da mensagem recebida é: (remetente_id, received_vector, operacao)
                 sender_id, received_vector, operation = msg
                 received_vector = list(received_vector) 
-                
-                # -----------------------------------------------------------------
-                # IMPLEMENTAÇÃO DO RELÓGIO VETORIAL E ORDENAÇÃO CAUSAL
-                # -----------------------------------------------------------------
                 
                 if can_deliver_causally(sender_id, received_vector, vectorClock):
                     # Entrega imediata
@@ -264,7 +267,8 @@ def main():
                 print('Terminating.')
                 exit(0)
         
-            time.sleep(5)
+            # Pequeno tempo de espera para garantir que todos os peers tenham iniciado
+            time.sleep(5) 
         
             # Create receiving message handler
             msgHandler = MsgHandler(recvSocket)
@@ -300,7 +304,6 @@ def main():
                 
                 # 2. Carimbar a mensagem com (process_id, vector_clock, operation_data)
                 op_data = operations[msgNumber%4]
-                # Converte para tupla antes de enviar para garantir imutabilidade na transmissão
                 msg = (myself, tuple(vectorClock), op_data) 
                 # -----------------------------------------------------------------
                 
@@ -315,5 +318,5 @@ def main():
                 msg = (-1, myself) # Enviamos o ID para contagem
                 msgPack = pickle.dumps(msg)
                 sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
-if __name__ == "__main__":
+if __name__ == '__main__':
         main()
