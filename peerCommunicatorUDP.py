@@ -178,7 +178,7 @@ def waitToStart():
 # From here, code is executed when program starts:
 registerWithGroupManager()
 def main():
-    global logicalClock
+        global logicalClock
         while 1:
             print('Waiting for signal to start...')
             (myself, nMsgs) = waitToStart()
@@ -238,5 +238,3 @@ def main():
                 msg = (-1,-1)
                 msgPack = pickle.dumps(msg)
                 sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
-if __name__ == "__main__":
-        main()
