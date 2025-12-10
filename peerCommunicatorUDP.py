@@ -142,10 +142,10 @@ class MsgHandler(threading.Thread):
         
         logList = deliveryQueue
         
-        print(f'\nProcess {myself}: Total ordered messages delivered = {len(logList)}\n')
+        print(f'\nProcess: Total ordered messages delivered = {len(logList)}\n')
 
         # Write log file
-        logFile = open('logfile'+str(myself)+'.log', 'w')
+        logFile = open('logfile'+'.log', 'w')
         logFile.writelines(str(logList))
         logFile.close()
         
