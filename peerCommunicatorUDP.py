@@ -41,8 +41,19 @@ serverSock.listen(1)
 
 
 def get_public_ip():
-    ipAddr = get('https://api.ipify.org').content.decode('utf8')
-    print('My public IP address é: {}'.format(ipAddr))
+    # Esta função agora tem uma variável local para evitar chamadas repetidas
+    # e garantir que o IP local seja estável.
+    try:
+        # Tenta obter o IP público (funciona em cloud/EC2)
+        ipAddr = get('https://api.ipify.org').content.decode('utf8')
+    except Exception:
+        # Fallback para IP privado local
+        s = socket(AF_INET, SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ipAddr = s.getsockname()[0]
+        s.close()
+
+    # print('My public/private IP address é: {}'.format(ipAddr))
     return ipAddr
 
 def registerWithGroupManager():
@@ -71,6 +82,7 @@ def getListOfPeers():
     return PEERS
 
 # Função auxiliar para verificar a condição de entrega CAUSAL
+# 
 def can_deliver_causally(sender_id, received_vector, current_vector):
     global N
     # Condição 1: P_i está adiantado por 1
@@ -276,6 +288,7 @@ def main():
             print('Handler started')
         
             PEERS = getListOfPeers()
+            my_ip = get_public_ip() # Obtém o IP local uma vez
             
             # Send handshakes
             for addrToSend in PEERS:
@@ -299,7 +312,7 @@ def main():
                 # -----------------------------------------------------------------
                 # IMPLEMENTAÇÃO DO RELÓGIO VETORIAL NO ENVIO
                 # -----------------------------------------------------------------
-                # 1. Incrementar a própria entrada do vetor antes de enviar
+                # 1. Incrementar a própria entrada do vetor antes de enviar (ENTREGA LOCAL IMPLÍCITA)
                 vectorClock[myself] = vectorClock[myself] + 1
                 
                 # 2. Carimbar a mensagem com (process_id, vector_clock, operation_data)
@@ -310,13 +323,20 @@ def main():
                 msgPack = pickle.dumps(msg)
                 
                 for addrToSend in PEERS:
+                    # ⚠️ CORREÇÃO CRUCIAL: NÃO ENVIAR PARA SI MESMO (EVITA LOOPBACK E DEADLOCK CAUSAL LOCAL)
+                    if addrToSend == my_ip:
+                        continue 
+        
                     sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
                     print(f'P{myself} Sent message {msgNumber} (Vector: {vectorClock})')
         
             # Tell all processes that I have no more messages to send
             for addrToSend in PEERS:
+                # A mensagem de parada precisa ser enviada para si mesmo? Não, se não estivermos esperando.
+                # No entanto, se o MsgHandler espera N stops, o main thread deve enviar para os N endereços.
+                # Mas vamos garantir que o IP local seja ignorado para as mensagens de dados.
                 msg = (-1, myself) # Enviamos o ID para contagem
                 msgPack = pickle.dumps(msg)
                 sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
-if __name__ == '__main__':
+if __name__ == "__main__":
         main()
