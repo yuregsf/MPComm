@@ -144,7 +144,10 @@ class MsgHandler(threading.Thread):
         global N
         global nMsgs
         
-        # Espera o handshake de todos os peers
+        # Espera o handshake de todos os peers (incluindo si mesmo)
+        # Conta o próprio handshake automaticamente
+        handShakeCount = 1  # Conta a si mesmo
+        
         while handShakeCount < N:
             msgPack = self.sock.recv(1024)
             msg = pickle.loads(msgPack)
@@ -155,8 +158,8 @@ class MsgHandler(threading.Thread):
         print('Secondary Thread: Received all handshakes. Entering the loop to receive messages.')
 
         logList = [] 
-        stopCount = 0 
-        expected_total_msgs = N * nMsgs
+        stopCount = 1  # Conta a si mesmo como "parado" quando não enviar mais
+        expected_total_msgs = (N - 1) * nMsgs  # Recebe de N-1 peers (não de si mesmo)
         
         # -----------------------------------------------------------------
         # LOOP DE RECEBIMENTO ROBUSTO COM TIMEOUT
@@ -189,15 +192,22 @@ class MsgHandler(threading.Thread):
             # Se a recepção foi bem-sucedida (sem timeout):
             msg = pickle.loads(msgPack)
             
-            if msg[0] == -1:    
-                stopCount = stopCount + 1
-                print(f"Received STOP from P{msg[1]}. Current stopCount={stopCount}")
-                # Força a checagem da fila imediatamente.
-                self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
+            if msg[0] == -1:
+                # Só conta STOP de outros peers (não de si mesmo)
+                if msg[1] != myself:
+                    stopCount = stopCount + 1
+                    print(f"Received STOP from P{msg[1]}. Current stopCount={stopCount}")
+                    # Força a checagem da fila imediatamente.
+                    self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
             
             elif len(msg) == 3:
                 # O formato da mensagem recebida é: (remetente_id, received_vector, operacao)
                 sender_id, received_vector, operation = msg
+                
+                # IGNORA mensagens de si mesmo (não deveria acontecer, mas por segurança)
+                if sender_id == myself:
+                    continue
+                    
                 received_vector = list(received_vector) 
                 
                 if can_deliver_causally(sender_id, received_vector, vectorClock):
@@ -270,6 +280,7 @@ def waitToStart():
 registerWithGroupManager()
 def main():
         global vectorClock
+        global deliveryQueue
         while 1:
             print('Waiting for signal to start...')
             (myself, nMsgs) = waitToStart()
@@ -279,7 +290,6 @@ def main():
                 print('Terminating.')
                 exit(0)
         
-            # Pequeno tempo de espera para garantir que todos os peers tenham iniciado
             time.sleep(5) 
         
             # Create receiving message handler
@@ -288,10 +298,12 @@ def main():
             print('Handler started')
         
             PEERS = getListOfPeers()
-            my_ip = get_public_ip() # Obtém o IP local uma vez
+            my_ip = get_public_ip()
             
-            # Send handshakes
+            # Send handshakes (somente para outros peers)
             for addrToSend in PEERS:
+                if addrToSend == my_ip:
+                    continue
                 print('Sending handshake to ', addrToSend)
                 msg = ('READY', myself)
                 msgPack = pickle.dumps(msg)
@@ -300,42 +312,34 @@ def main():
             print('Main Thread: Sent all handshakes. Waiting for confirmation...')
         
             while (handShakeCount < N):
-                pass  # wait for the handshakes
+                pass
         
             # Send a sequence of data messages to all other processes 
             global vectorClock 
             
             for msgNumber in range(0, nMsgs):
-                # Wait some random time between successive messages
                 time.sleep(random.randrange(10,100)/1000)
                 
-                # -----------------------------------------------------------------
-                # IMPLEMENTAÇÃO DO RELÓGIO VETORIAL NO ENVIO
-                # -----------------------------------------------------------------
-                # 1. Incrementar a própria entrada do vetor antes de enviar (ENTREGA LOCAL IMPLÍCITA)
+                # Incrementar o relógio vetorial antes de enviar
                 vectorClock[myself] = vectorClock[myself] + 1
                 
-                # 2. Carimbar a mensagem com (process_id, vector_clock, operation_data)
                 op_data = operations[msgNumber%4]
                 msg = (myself, tuple(vectorClock), op_data) 
-                # -----------------------------------------------------------------
                 
                 msgPack = pickle.dumps(msg)
                 
+                # Enviar apenas para outros peers (NÃO para si mesmo)
                 for addrToSend in PEERS:
-                    # ⚠️ CORREÇÃO CRUCIAL: NÃO ENVIAR PARA SI MESMO (EVITA LOOPBACK E DEADLOCK CAUSAL LOCAL)
                     if addrToSend == my_ip:
                         continue 
         
                     sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
-                    print(f'P{myself} Sent message {msgNumber} (Vector: {vectorClock})')
+                
+                print(f'P{myself} Sent message {msgNumber} (Vector: {vectorClock})')
         
-            # Tell all processes that I have no more messages to send
+            # Enviar mensagem de parada para todos (incluindo si mesmo para contagem)
             for addrToSend in PEERS:
-                # A mensagem de parada precisa ser enviada para si mesmo? Não, se não estivermos esperando.
-                # No entanto, se o MsgHandler espera N stops, o main thread deve enviar para os N endereços.
-                # Mas vamos garantir que o IP local seja ignorado para as mensagens de dados.
-                msg = (-1, myself) # Enviamos o ID para contagem
+                msg = (-1, myself)
                 msgPack = pickle.dumps(msg)
                 sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
 if __name__ == "__main__":

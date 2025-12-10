@@ -63,7 +63,8 @@ def waitForLogsAndCompare(N_MSGS):
 
     unordered = 0
     
-    expected_log_size = N * N_MSGS
+    # Cada peer recebe mensagens de N-1 outros peers (não de si mesmo)
+    expected_log_size = (N - 1) * N_MSGS
     
     try:
         log_size = len(msgs[0])
