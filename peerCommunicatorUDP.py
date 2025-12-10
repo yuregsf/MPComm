@@ -238,3 +238,5 @@ def main():
                 msg = (-1,-1)
                 msgPack = pickle.dumps(msg)
                 sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
+if __name__ == "__main__":
+    main()
