@@ -48,8 +48,6 @@ def startPeers(peerList,nMsgs):
 def waitForLogsAndCompare(N_MSGS):
     # Loop to wait for the message logs for comparison:
     numPeers = 0
-    # msgs armazena [Log do Peer 0, Log do Peer 1, ...]
-    # Cada Log é uma lista de tuplas: (timestamp, process_id, operation_data)
     msgs = [] 
 
     # Receive the logs of messages from the peer processes
@@ -63,15 +61,21 @@ def waitForLogsAndCompare(N_MSGS):
 
     unordered = 0
     
-    # O tamanho do log deve ser o número total de mensagens enviadas (N * N_MSGS)
+    # O tamanho do log é o número total de mensagens enviadas no sistema (N * N_MSGS)
+    expected_log_size = N * N_MSGS
+    
     try:
         log_size = len(msgs[0])
     except IndexError:
         print("ERROR: No logs received or logs are empty.")
         return
 
-    print(f"\n--- Starting Log Comparison. Expected log size: {log_size} ---")
+    print(f"\n--- Starting Log Comparison. Expected log size: {expected_log_size} ---")
 
+    # Verifica se todos os logs têm o tamanho esperado.
+    if log_size != expected_log_size:
+        print(f"WARNING: Expected log size ({expected_log_size}) does not match received log size ({log_size}).")
+    
     # Compare the lists of messages (que devem estar totalmente ordenadas)
     for j in range(0, log_size):
         firstMsg = msgs[0][j]
