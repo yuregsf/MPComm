@@ -5,6 +5,7 @@ import random
 import time
 import pickle
 from requests import get
+from socket import timeout # Importar o timeout é ESSENCIAL para a robustez
 
 # ----------------------------------------------------------------------
 # VARIÁVEIS GLOBAIS PARA ORDENAÇÃO CAUSAL (Relógio Vetorial e Fila de Entrega)
@@ -16,8 +17,7 @@ vectorClock = []
 deliveryQueue = [] 
 # ID do processo atual
 myself = -1 
-# N é o número total de peers (de constMP)
-# O número de mensagens a enviar
+# O número de mensagens a enviar (definido em waitToStart)
 nMsgs = 0
 # ----------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ serverSock.listen(1)
 
 def get_public_ip():
     ipAddr = get('https://api.ipify.org').content.decode('utf8')
-    print('My public IP address is: {}'.format(ipAddr))
+    print('My public IP address é: {}'.format(ipAddr))
     return ipAddr
 
 def registerWithGroupManager():
@@ -72,15 +72,12 @@ def getListOfPeers():
 
 # Função auxiliar para verificar a condição de entrega CAUSAL
 def can_deliver_causally(sender_id, received_vector, current_vector):
+    global N
     # Condição 1: P_i está adiantado por 1
-    # O componente do remetente no vetor da mensagem deve ser exatamente um a mais 
-    # do que o que P_j viu de P_i.
     if received_vector[sender_id] != current_vector[sender_id] + 1:
         return False
     
     # Condição 2: Todas as dependências anteriores foram vistas
-    # Para todos os outros processos k != i, o que a mensagem viu de k
-    # já deve ter sido visto (ou incorporado) por P_j.
     for k in range(N):
         if k != sender_id:
             if received_vector[k] > current_vector[k]:
@@ -95,10 +92,10 @@ class MsgHandler(threading.Thread):
 
     def process_queue_and_deliver(self, current_vector, queue, log):
         global myself
+        global N
         
         delivered_count = 0
         i = 0
-        # Itera sobre a fila, verificando se alguma mensagem presa pode ser liberada
         while i < len(queue):
             sender_id, received_vector, operation = queue[i]
             
@@ -109,7 +106,7 @@ class MsgHandler(threading.Thread):
                 
                 print(f'*** DELIVERED FROM QUEUE ***: P{myself} delivered {delivered_msg[2]} from P{sender_id} with vector {received_vector}')
                 
-                # Regra 3 (a): Atualizar o relógio (máximo componente a componente)
+                # Regra 3 (a): Atualizar o relógio (máximo componente a componente) 
                 for k in range(N):
                     current_vector[k] = max(current_vector[k], received_vector[k])
                 
@@ -144,23 +141,45 @@ class MsgHandler(threading.Thread):
 
         print('Secondary Thread: Received all handshakes. Entering the loop to receive messages.')
 
-        logList = [] # Lista de mensagens FINALMENTE ENTREGUES (ordenadas causalmente)
-        stopCount=0 
+        logList = [] 
+        stopCount = 0 
+        expected_total_msgs = N * nMsgs
         
-        # O loop continua até que todos os peers enviem a mensagem de parada
-        while stopCount < N:
-            msgPack = self.sock.recv(1024)   
+        # -----------------------------------------------------------------
+        # LOOP DE RECEBIMENTO ROBUSTO COM TIMEOUT
+        # -----------------------------------------------------------------
+        while True:
+            # 1. Critério de Parada: Todas as paradas foram vistas E a fila está vazia
+            if stopCount == N and len(deliveryQueue) == 0:
+                print("All peers sent STOP messages and the delivery queue is empty. Terminating reception.")
+                break
+                
+            try:
+                # Usa um timeout curto (100ms) para evitar bloqueio e permitir reavaliação da fila.
+                self.sock.settimeout(0.1) 
+                msgPack = self.sock.recv(1024)   
+                self.sock.settimeout(None) # Retorna ao modo bloqueante após sucesso
+            except timeout:
+                # 2. Em caso de timeout: Tenta processar a fila.
+                self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
+                continue # Volta para o topo do loop para re-avaliar a condição de parada
+            except ConnectionResetError:
+                 print("Connection reset error detected. Breaking reception loop.")
+                 break
+            
+            # Se a recepção foi bem-sucedida (sem timeout):
             msg = pickle.loads(msgPack)
             
-            if msg[0] == -1:    # count the 'stop' messages
+            if msg[0] == -1:    
                 stopCount = stopCount + 1
+                print(f"Received STOP. Current stopCount={stopCount}")
+                # Força a checagem da fila imediatamente.
+                self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
+            
             elif len(msg) == 3:
                 # O formato da mensagem recebida é: (remetente_id, received_vector, operacao)
                 sender_id, received_vector, operation = msg
-                # Necessário converter para lista para garantir mutabilidade e comparação
                 received_vector = list(received_vector) 
-                
-                print(f'Message received (Vector: {received_vector}) from P{sender_id}. My current vector: {vectorClock}')
                 
                 # -----------------------------------------------------------------
                 # IMPLEMENTAÇÃO DO RELÓGIO VETORIAL E ORDENAÇÃO CAUSAL
@@ -185,11 +204,14 @@ class MsgHandler(threading.Thread):
                 
                 # Tenta entregar mensagens presas na fila
                 self.process_queue_and_deliver(vectorClock, deliveryQueue, logList)
-                
-                print(f"P{myself} updated vector: {vectorClock}")
-                # -----------------------------------------------------------------
         
-        # Impressão do Log Final Ordenado
+        # -----------------------------------------------------------------
+        # FINALIZAÇÃO
+        # -----------------------------------------------------------------
+        
+        if len(logList) != expected_total_msgs:
+            print(f"FATAL WARNING: Log size mismatch. Expected {expected_total_msgs} messages, but only {len(logList)} were delivered.")
+            
         print(f'\nProcess: Total causally ordered messages delivered = {len(logList)}\n')
 
         # Write log file
@@ -205,7 +227,6 @@ class MsgHandler(threading.Thread):
         clientSock.send(msgPack)
         clientSock.close()
         
-        # Reset the handshake counter
         handShakeCount = 0
 
         exit(0)
@@ -233,7 +254,7 @@ def waitToStart():
 # From here, code is executed when program starts:
 registerWithGroupManager()
 def main():
-        global logicalClocks
+        global vectorClock
         while 1:
             print('Waiting for signal to start...')
             (myself, nMsgs) = waitToStart()
@@ -279,8 +300,7 @@ def main():
                 
                 # 2. Carimbar a mensagem com (process_id, vector_clock, operation_data)
                 op_data = operations[msgNumber%4]
-                # É importante enviar o vetor como uma tupla (immutable) para evitar 
-                # referências, embora o pickle resolva isso. Usamos a lista localmente.
+                # Converte para tupla antes de enviar para garantir imutabilidade na transmissão
                 msg = (myself, tuple(vectorClock), op_data) 
                 # -----------------------------------------------------------------
                 
@@ -292,7 +312,7 @@ def main():
         
             # Tell all processes that I have no more messages to send
             for addrToSend in PEERS:
-                msg = (-1,-1)
+                msg = (-1, myself) # Enviamos o ID para contagem
                 msgPack = pickle.dumps(msg)
                 sendSocket.sendto(msgPack, (addrToSend,PEER_UDP_PORT))
 if __name__ == "__main__":
