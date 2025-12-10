@@ -48,6 +48,8 @@ def startPeers(peerList,nMsgs):
 def waitForLogsAndCompare(N_MSGS):
     # Loop to wait for the message logs for comparison:
     numPeers = 0
+    # msgs armazena [Log do Peer 0, Log do Peer 1, ...]
+    # Cada Log é uma lista de tuplas: (vector_clock, process_id, operation_data)
     msgs = [] 
 
     # Receive the logs of messages from the peer processes
@@ -61,7 +63,6 @@ def waitForLogsAndCompare(N_MSGS):
 
     unordered = 0
     
-    # O tamanho do log é o número total de mensagens enviadas no sistema (N * N_MSGS)
     expected_log_size = N * N_MSGS
     
     try:
@@ -72,26 +73,26 @@ def waitForLogsAndCompare(N_MSGS):
 
     print(f"\n--- Starting Log Comparison. Expected log size: {expected_log_size} ---")
 
-    # Verifica se todos os logs têm o tamanho esperado.
     if log_size != expected_log_size:
         print(f"WARNING: Expected log size ({expected_log_size}) does not match received log size ({log_size}).")
-    
-    # Compare the lists of messages (que devem estar totalmente ordenadas)
+        
+    # Compare the lists of messages (que devem estar causalmente ordenadas)
     for j in range(0, log_size):
         firstMsg = msgs[0][j]
         # Compara a j-ésima mensagem do Peer 0 com a j-ésima de todos os outros peers.
         for i in range(1, N): 
             if firstMsg != msgs[i][j]:
                 unordered = unordered + 1
+                # Mostra o ponto da inconsistência
                 print(f"Discrepancy at position {j}: Peer 0 has {firstMsg}, Peer {i} has {msgs[i][j]}")
                 break
     
     print ('\n--- Comparison Result ---')
     print ('Found ' + str(unordered) + ' unordered message rounds')
     if unordered == 0:
-        print('✅ CONSISTÊNCIA GARANTIDA: Todos os Peers têm a mesma ordem total de mensagens.')
+        print('✅ CONSISTÊNCIA CAUSAL GARANTIDA: Todos os Peers entregaram as mensagens na mesma ordem causal.')
     else:
-        print('❌ INCONSISTÊNCIA DETECTADA: Logs de mensagens não correspondem.')
+        print('❌ INCONSISTÊNCIA DETECTADA: Logs de mensagens não correspondem na ordem de entrega.')
     print('---------------------------\n')
 
 
