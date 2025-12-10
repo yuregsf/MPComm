@@ -61,8 +61,6 @@ def waitForLogsAndCompare(N_MSGS):
         msgs.append(pickle.loads(msgPack))
         numPeers = numPeers + 1
 
-    unordered = 0
-    
     # Cada peer recebe mensagens de N-1 outros peers (não de si mesmo)
     expected_log_size = (N - 1) * N_MSGS
     
@@ -73,28 +71,53 @@ def waitForLogsAndCompare(N_MSGS):
         return
 
     print(f"\n--- Starting Log Comparison. Expected log size: {expected_log_size} ---")
-
-    if log_size != expected_log_size:
-        print(f"WARNING: Expected log size ({expected_log_size}) does not match received log size ({log_size}).")
-        
-    # Compare the lists of messages (que devem estar causalmente ordenadas)
-    for j in range(0, log_size):
-        firstMsg = msgs[0][j]
-        # Compara a j-ésima mensagem do Peer 0 com a j-ésima de todos os outros peers.
-        for i in range(1, N): 
-            if firstMsg != msgs[i][j]:
-                unordered = unordered + 1
-                # Mostra o ponto da inconsistência
-                print(f"Discrepancy at position {j}: Peer 0 has {firstMsg}, Peer {i} has {msgs[i][j]}")
-                break
+    print(f"Received {len(msgs)} logs from peers")
     
-    print ('\n--- Comparison Result ---')
-    print ('Found ' + str(unordered) + ' unordered message rounds')
-    if unordered == 0:
-        print('✅ CONSISTÊNCIA CAUSAL GARANTIDA: Todos os Peers entregaram as mensagens na mesma ordem causal.')
+    # Verificar se todos os logs têm o tamanho esperado
+    size_mismatch = False
+    for i in range(N):
+        if len(msgs[i]) != expected_log_size:
+            print(f"WARNING: Peer {i} log size is {len(msgs[i])}, expected {expected_log_size}")
+            size_mismatch = True
+    
+    if size_mismatch:
+        print("ERROR: Not all peers received the expected number of messages!")
+        return
+        
+    # Verificar consistência causal: todos os peers devem ter a MESMA sequência de mensagens
+    # Formato de cada mensagem no log: (vector_clock, sender_id, operation)
+    
+    inconsistencies = 0
+    first_peer_log = msgs[0]
+    
+    print("\nComparing all peer logs for causal consistency...")
+    
+    for i in range(1, N):
+        if msgs[i] != first_peer_log:
+            inconsistencies += 1
+            print(f"\n❌ INCONSISTENCY: Peer {i} log differs from Peer 0")
+            
+            # Encontrar primeira diferença
+            for j in range(min(len(first_peer_log), len(msgs[i]))):
+                if first_peer_log[j] != msgs[i][j]:
+                    print(f"  First difference at position {j}:")
+                    print(f"    Peer 0: {first_peer_log[j]}")
+                    print(f"    Peer {i}: {msgs[i][j]}")
+                    break
+    
+    print('\n' + '='*50)
+    print('--- CAUSAL CONSISTENCY VERIFICATION RESULT ---')
+    print('='*50)
+    
+    if inconsistencies == 0:
+        print('✅ SUCCESS: All peers delivered messages in the SAME CAUSAL ORDER')
+        print('   Causal consistency is GUARANTEED!')
+        print(f'   All {N} peers have identical logs with {expected_log_size} messages')
     else:
-        print('❌ INCONSISTÊNCIA DETECTADA: Logs de mensagens não correspondem na ordem de entrega.')
-    print('---------------------------\n')
+        print(f'❌ FAILURE: Found {inconsistencies} peer(s) with different message orders')
+        print('   Causal consistency is VIOLATED!')
+    
+    print('='*50 + '\n')
 
 
 # Initiate server:
